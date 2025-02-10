@@ -48,7 +48,7 @@ st.title(":material/today: Attribut AI")
 st.logo("images/logo.png", size="medium")
 
 # --- Sidebar: toggle + settings ---
-sync_toggle = st.sidebar.toggle(":material/data_object: **Sync with Notion** (10 min)", value=True)
+sync_toggle = st.sidebar.toggle(":material/data_object: **Sync with Notion** (10 min)", value=False)
 st.sidebar.container(height=20, border=False)
 st.sidebar.header(":material/settings: Settings")
 
@@ -79,9 +79,9 @@ with st.sidebar.popover(":material/engineering: Working Pattern Setup"):
         f"{int(start_time):02d}:{int((start_time % 1)*60):02d} - "
         f"{int(end_time):02d}:{int((end_time % 1)*60):02d}"
     )
-    energy = st.radio("Energy Level", ['low', 'medium', 'high'], index=2, horizontal=True)
+    energy = st.radio("**Energy Level**", ['low', 'medium', 'high'], index=2, horizontal=True)
 
-    st.write(f"Next Working Day: {get_next_working_day()}")
+    st.write(f"Next Working Day: **{get_next_working_day()}**")
 
 st.sidebar.container(height=30, border=False)
 
@@ -129,6 +129,7 @@ def schedule_tasks(tasks_list):
     else:
         rolling_datetime = now
 
+    counter = 1
     for task in tasks_list:
         # Optional: Skip tasks that already have a scheduled start time
         if 'start' in task:
@@ -155,7 +156,7 @@ def schedule_tasks(tasks_list):
         start_datetime = rolling_datetime
         end_datetime = start_datetime + timedelta(minutes=task["Duration"])
 
-        with st.spinner(f"Scheduling task with Notion API call..."):
+        with st.spinner(f"Scheduling Task **0{counter}** - Notion API..."):
             update_task_in_notion(
                 task["id"],
                 start_datetime.isoformat(),
@@ -165,6 +166,7 @@ def schedule_tasks(tasks_list):
         # Add a 2-minute buffer before scheduling the next task.
         rolling_datetime = end_datetime + timedelta(minutes=2)
         time.sleep(0.3)
+        counter = counter + 1
 
     show_countdown_timer()
 

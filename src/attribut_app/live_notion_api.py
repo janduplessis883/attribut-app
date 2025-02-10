@@ -41,14 +41,14 @@ def notion_api_sync(database_id):
                 }
             ]
         },
-        page_size=20,
+        page_size=30,
         sorts=[{
             "property": "Deadline",
             "direction": "ascending"
         }]
     )
 
-    tasks = response["results"][:20]  # Limit to 10 tasks
+    tasks = response["results"]  # Limit to 10 tasks
 
     return tasks
 
