@@ -164,6 +164,7 @@ if sync_toggle:
             rolling_datetime = end_datetime + timedelta(minutes=2)
             time.sleep(0.3)
 
+
         # Show the countdown timer
         show_countdown_timer()
 
