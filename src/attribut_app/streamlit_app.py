@@ -121,7 +121,7 @@ if sync_toggle:
 
     # Convert DataFrame to list of dicts
     tasks_dict = df.to_dict(orient="records")
-    st.code(tasks_dict)
+
 
 
     # Example scheduling logi
@@ -164,106 +164,10 @@ if sync_toggle:
             rolling_datetime = end_datetime + timedelta(minutes=2)
             time.sleep(0.3)
 
-
-
-
-
-    # Show the countdown timer
-    show_countdown_timer()
+        # Show the countdown timer
+        show_countdown_timer()
 
 # -------------------------------------------------
 # USER FEEDBACK SECTION
-st.markdown("---")
-st.header("User Feedback (RL Reward)")
 
-def show_feedback_table():
-    # If we have tasks from the last sync
-    if not st.session_state.last_ranked_tasks:
-        st.info("No tasks available for feedback. Please sync with Notion first.")
-        return
-
-    # Build a DataFrame from the last-ranked tasks
-    df_ranked = pd.DataFrame(st.session_state.last_ranked_tasks)
-
-    # Add a "User Feedback" column with default "No Feedback"
-    if "User Feedback" not in df_ranked.columns:
-        df_ranked["User Feedback"] = "No Feedback"
-
-    # Define column config so "User Feedback" is a selectbox with 3 radio options
-    column_config = {
-        "User Feedback": st.column_config.SelectboxColumn(
-            label="User Feedback",
-            options=["No Feedback", "Positive", "Neutral", "Negative"]
-        )
-    }
-
-    edited_df = st.data_editor(
-        df_ranked,
-        use_container_width=True,
-        num_rows="fixed",  # don't allow adding new rows
-        key="feedback_editor",
-        column_config=column_config
-    )
-
-    st.caption("Select 'Positive', 'Neutral', or 'Negative' in the 'User Feedback' column for each task.")
-
-    if st.button("Submit Feedback"):
-        # Retrieve relevant RL data
-        if st.session_state.last_probs is None or st.session_state.last_state_tensor is None:
-            st.warning("No model state found to store transitions.")
-            return
-
-        state_tensor = st.session_state.last_state_tensor
-        probs_tensor = st.session_state.last_probs  # shape [1, 10] typically
-
-        feedback_count = 0
-
-        for idx, row in edited_df.iterrows():
-            feedback_val = row.get("User Feedback", "No Feedback")
-            if feedback_val == "No Feedback":
-                continue  # skip storing a transition
-
-            # Convert feedback_val to a numeric reward
-            if feedback_val == "Positive":
-                reward = 2.0
-            elif feedback_val == "Negative":
-                reward = -3.0
-            else:  # "Neutral"
-                reward = 0.0
-
-            # The row index 'idx' hopefully matches our model action index,
-            # if the ordering is consistent with the sorted tasks. If we changed ordering,
-            # we'd need a more robust mapping.
-            chosen_action_idx = idx  # or some mapping
-
-            # old_prob (model probability for that action)
-            # We clamp it if idx >= 10 or if tasks < 10
-            if idx < probs_tensor.shape[1]:
-                old_prob = probs_tensor[0, chosen_action_idx].unsqueeze(0)  # shape [1]
-            else:
-                # If user had more tasks than the model input or an invalid index,
-                # skip or set old_prob=0
-                continue
-
-            # Store in PPO memory
-            task_id = row.get("Task ID", f"Unknown_{idx}")
-            st.session_state.trainer.store_transition(
-                state=state_tensor,
-                action=chosen_action_idx,
-                old_prob=old_prob,
-                reward=reward,
-                task_id=task_id
-            )
-            feedback_count += 1
-
-        st.success(f"Feedback stored for {feedback_count} tasks! You can now update the model below.")
-
-# Call the function to show feedback table
-show_feedback_table()
-
-if st.button("Update Model (PPO Step)"):
-    loss_value = trainer.update_policy()
-    if loss_value is not None:
-        st.write(f"**Model updated**. Loss: {loss_value:.4f}")
-    else:
-        st.write("No transitions to update from.")
+st.header("Notion Sync OFF")
