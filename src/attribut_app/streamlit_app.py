@@ -110,44 +110,51 @@ def show_countdown_timer():
     st.session_state.next_call = time.time() + st.session_state.notion_sync_frequency
     st.rerun()
 
-def schedule_tasks(tasks_dict):
+def schedule_tasks(tasks_list):
     """
-    Schedules tasks one after another within working hours (9:00 to 16:00).
-    If the current time is before 9:00, clamp to 9:00.
-    If it's after 16:00, move to next working day at 9:00.
-    Each task is scheduled in sequence for its `Duration` in minutes.
-    A 2-minute buffer is added between tasks.
+    Schedules tasks sequentially within working hours (9:00 to 16:00).
+    - If run before 9:00, scheduling starts at 9:00.
+    - If run after 16:00, scheduling starts the next working day at 9:00.
+    - If run during working hours, scheduling starts from the current time.
+    Each task is scheduled for its `Duration` (in minutes) and a 2-minute buffer is added after each task.
+    Optionally, tasks that already have a 'start' time (and are thus in progress or complete) are skipped.
     """
-    # Get the current time
-    rolling_datetime = datetime.now()
+    now = datetime.now()
 
-    # If after 16:00, schedule from the next working day 9:00
-    if rolling_datetime.time() >= datetime_time(16, 0):
-        rolling_datetime = get_next_working_day(rolling_datetime)
-    # If before 9:00, clamp to 9:00
-    elif rolling_datetime.time() < datetime_time(9, 0):
-        rolling_datetime = rolling_datetime.replace(hour=9, minute=0, second=0, microsecond=0)
+    # Determine the starting point for scheduling
+    if now.time() < datetime_time(9, 0):
+        rolling_datetime = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    elif now.time() >= datetime_time(16, 0):
+        rolling_datetime = get_next_working_day(now)
+    else:
+        rolling_datetime = now
 
-    # Now loop over tasks once
-    for task in tasks_dict:
-        # If we've moved past 16:00 while scheduling, jump to next day 9:00
+    for task in tasks_list:
+        # Optional: Skip tasks that already have a scheduled start time
+        if 'start' in task:
+            scheduled_start = datetime.fromisoformat(task['start'])
+            # If the task is already in progress or has started, skip it.
+            if scheduled_start <= now:
+                continue
+
+        # If our rolling time is at or past 16:00, jump to the next working day at 9:00.
         if rolling_datetime.time() >= datetime_time(16, 0):
             rolling_datetime = get_next_working_day(rolling_datetime)
 
-        # Calculate minutes available before 16:00
+        # Calculate how many minutes remain until 16:00 on the current day.
         day_end = rolling_datetime.replace(hour=16, minute=0, second=0, microsecond=0)
         available_minutes = (day_end - rolling_datetime).total_seconds() / 60
 
-        # If there's not enough time left today, jump to next working day
+        # If the current task's duration doesn't fit before 16:00,
+        # move rolling_datetime to the next working day at 9:00.
         if available_minutes < task["Duration"]:
             rolling_datetime = get_next_working_day(rolling_datetime)
             day_end = rolling_datetime.replace(hour=16, minute=0, second=0, microsecond=0)
 
-        # Schedule the task
+        # Schedule the task.
         start_datetime = rolling_datetime
         end_datetime = start_datetime + timedelta(minutes=task["Duration"])
 
-        # Update your Notion (or any other place)
         with st.spinner(f"Scheduling task with Notion API call..."):
             update_task_in_notion(
                 task["id"],
@@ -155,13 +162,10 @@ def schedule_tasks(tasks_dict):
                 end_datetime.isoformat()
             )
 
-        # Add a 2-minute buffer before the next task
+        # Add a 2-minute buffer before scheduling the next task.
         rolling_datetime = end_datetime + timedelta(minutes=2)
-
-        # Sleep for 0.3 seconds if needed
         time.sleep(0.3)
 
-    # Show the countdown timer after all tasks are scheduled
     show_countdown_timer()
 
 # -----------------------------------------
