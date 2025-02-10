@@ -39,18 +39,6 @@ if "energy" not in st.session_state:
 if "work_days" not in st.session_state:
     st.session_state.work_days = ['Mon', 'Tues', 'Wed', 'Thurs']
 
-# Initialize or load the RL model and trainer in session state
-if "trainer" not in st.session_state:
-    model = TaskScheduler()
-    # If you have a saved checkpoint, do e.g.: model.load_state_dict(torch.load("my_model.pth"))
-    st.session_state.model = model
-
-    trainer = PPOTrainer(st.session_state.model)  # Optionally pass db_client=supabase
-    st.session_state.trainer = trainer
-
-# Aliases for convenience
-model = st.session_state.model
-trainer = st.session_state.trainer
 
 database_id = "136fdfd68a9780a3ae4be27f473bad08"
 current_datetime = datetime.now()

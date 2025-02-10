@@ -13,10 +13,10 @@ database_id = "136fdfd68a9780a3ae4be27f473bad08"
 
 NOTION_ENDPOINT = "https://api.notion.com/v1"
 NOTION_DATABASE_ID = database_id  # Replace with your actual Notion Database ID
-NOTION_API_TOKEN = os.environ['NOTION_TOKEN']  # Replace with your actual token
+NOTION_API_TOKEN = st.secrets["NOTION_TOKEN"]  # Replace with your actual token
 
 def notion_api_sync(database_id):
-    notion = Client(auth=os.environ["NOTION_TOKEN"])
+    notion = Client(auth=NOTION_API_TOKEN)
 
     # Calculate dates
     today = datetime.now().date()
