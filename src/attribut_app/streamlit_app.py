@@ -166,7 +166,6 @@ def schedule_tasks(tasks_list):
         rolling_datetime = end_datetime + timedelta(minutes=2)
         time.sleep(0.3)
 
-
     show_countdown_timer()
 
 # -----------------------------------------

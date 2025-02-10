@@ -15,4 +15,5 @@ def get_next_working_day(start_date=None):
     while next_day.weekday() in (5, 6):
         next_day += timedelta(days=1)
 
+
     return next_day.replace(hour=9, minute=0, second=0, microsecond=0)
