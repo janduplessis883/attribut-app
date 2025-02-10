@@ -110,6 +110,60 @@ def show_countdown_timer():
     st.session_state.next_call = time.time() + st.session_state.notion_sync_frequency
     st.rerun()
 
+def schedule_tasks(tasks_dict):
+    """
+    Schedules tasks one after another within working hours (9:00 to 16:00).
+    If the current time is before 9:00, clamp to 9:00.
+    If it's after 16:00, move to next working day at 9:00.
+    Each task is scheduled in sequence for its `Duration` in minutes.
+    A 2-minute buffer is added between tasks.
+    """
+    # Get the current time
+    rolling_datetime = datetime.now()
+
+    # If after 16:00, schedule from the next working day 9:00
+    if rolling_datetime.time() >= datetime_time(16, 0):
+        rolling_datetime = get_next_working_day(rolling_datetime)
+    # If before 9:00, clamp to 9:00
+    elif rolling_datetime.time() < datetime_time(9, 0):
+        rolling_datetime = rolling_datetime.replace(hour=9, minute=0, second=0, microsecond=0)
+
+    # Now loop over tasks once
+    for task in tasks_dict:
+        # If we've moved past 16:00 while scheduling, jump to next day 9:00
+        if rolling_datetime.time() >= datetime_time(16, 0):
+            rolling_datetime = get_next_working_day(rolling_datetime)
+
+        # Calculate minutes available before 16:00
+        day_end = rolling_datetime.replace(hour=16, minute=0, second=0, microsecond=0)
+        available_minutes = (day_end - rolling_datetime).total_seconds() / 60
+
+        # If there's not enough time left today, jump to next working day
+        if available_minutes < task["Duration"]:
+            rolling_datetime = get_next_working_day(rolling_datetime)
+            day_end = rolling_datetime.replace(hour=16, minute=0, second=0, microsecond=0)
+
+        # Schedule the task
+        start_datetime = rolling_datetime
+        end_datetime = start_datetime + timedelta(minutes=task["Duration"])
+
+        # Update your Notion (or any other place)
+        with st.spinner(f"Scheduling task with Notion API call..."):
+            update_task_in_notion(
+                task["id"],
+                start_datetime.isoformat(),
+                end_datetime.isoformat()
+            )
+
+        # Add a 2-minute buffer before the next task
+        rolling_datetime = end_datetime + timedelta(minutes=2)
+
+        # Sleep for 0.3 seconds if needed
+        time.sleep(0.3)
+
+    # Show the countdown timer after all tasks are scheduled
+    show_countdown_timer()
+
 # -----------------------------------------
 # Main sync logic
 if sync_toggle:
@@ -123,50 +177,9 @@ if sync_toggle:
     tasks_dict = df.to_dict(orient="records")
 
 
-
-    # Example scheduling logi
-    for task in tasks_dict:
-        rolling_datetime = datetime.now()
-        if rolling_datetime.time() >= datetime_time(16, 0):
-            rolling_datetime = get_next_working_day()
-        else:
-            # Start today but clamp to 9:30 if needed
-            if rolling_datetime.time() < datetime_time(9, 00):
-                rolling_datetime = rolling_datetime.replace(hour=9, minute=0, second=0, microsecond=0)
-
-        for task in tasks_dict:
-            # Check if current time is outside working hours
-            if rolling_datetime.time() >= datetime_time(16, 0):
-                rolling_datetime = get_next_working_day(rolling_datetime)
-
-            # Calculate maximum available time today
-            day_end = rolling_datetime.replace(hour=16, minute=0, second=0)
-            available_minutes = (day_end - rolling_datetime).total_seconds() / 60
-
-            # Check if task fits in current day
-            if available_minutes < task["Duration"]:
-                rolling_datetime = get_next_working_day(rolling_datetime)
-                day_end = rolling_datetime.replace(hour=16, minute=0)
-
-            # Schedule task
-            start_datetime = rolling_datetime
-            end_datetime = start_datetime + timedelta(minutes=task["Duration"])
-
-            # Update Notion
-            with st.spinner("Updating Notion via API..."):
-                update_task_in_notion(
-                    task["id"],
-                    start_datetime.isoformat(),
-                    end_datetime.isoformat()
-                )
-
-            # Set next slot with 2-minute buffer
-            rolling_datetime = end_datetime + timedelta(minutes=2)
-            time.sleep(0.3)
+    schedule_tasks(tasks_dict)
 
 
-        # Show the countdown timer
-        show_countdown_timer()
 
 # -------------------------------------------------
 # USER FEEDBACK SECTION
