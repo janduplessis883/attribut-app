@@ -1,0 +1,16 @@
+# Core Packages
+numpy
+pandas
+
+# Visualization
+matplotlib
+seaborn
+
+
+# Utilities
+colorama
+pytest
+black
+streamlit
+notion-client
+supabase
