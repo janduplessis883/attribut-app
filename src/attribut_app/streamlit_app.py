@@ -191,3 +191,4 @@ if sync_toggle:
 # USER FEEDBACK SECTION
 
 st.header("Notion Sync OFF")
+st.image('images/notion.png')
