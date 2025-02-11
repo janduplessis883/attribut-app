@@ -191,4 +191,4 @@ if sync_toggle:
 # USER FEEDBACK SECTION
 
 st.subheader("Notion Sync OFF")
-st.image('images/notion2.png')
+st.image('images/notion2.jpg')
