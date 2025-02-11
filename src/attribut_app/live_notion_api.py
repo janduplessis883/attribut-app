@@ -150,8 +150,8 @@ def process_notion_pages(pages, energy):
     if energy == 'low':
         df = df.sort_values(by='Duration', ascending=True, na_position='last').reset_index(drop=True)
     elif energy == 'medium':
-        df = df.sort_values(by=['Deadline', 'Priority'], ascending=[True, False], na_position='last').reset_index(drop=True)
+        df = df.sort_values(by=['Deadline', 'Priority'], ascending=[False, False], na_position='last').reset_index(drop=True)
     elif energy == 'high':
-        df = df.sort_values(by=['Deadline', 'Priority'], ascending=[True, True], na_position='last').reset_index(drop=True)
+        df = df.sort_values(by=['Deadline', 'Priority'], ascending=[False, True], na_position='last').reset_index(drop=True)
 
     return df
