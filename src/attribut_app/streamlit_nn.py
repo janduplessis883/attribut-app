@@ -4,10 +4,7 @@ import time
 import os
 
 
-st.code(os.getcwd())
-
-st.title(":material/today: Attribut Notion Scheduler")
-
+st.title(":material/today: Notion Scheduler")
 
 API_KEY = st.secrets['API_KEY']
 DATABASE_ID = st.secrets['DATABASE_ID']
