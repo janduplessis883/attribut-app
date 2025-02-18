@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from nn import *
+from src.attribut_app.nn import *
 
 st.title(":material/today: Attribut Notion Scheduler")
 
