@@ -1,8 +1,13 @@
+from nn import NotionCalendar, Scheduler
 import streamlit as st
 import time
-from src.attribut_app.nn import *
+import os
+
+
+st.code(os.getcwd())
 
 st.title(":material/today: Attribut Notion Scheduler")
+
 
 API_KEY = st.secrets['API_KEY']
 DATABASE_ID = st.secrets['DATABASE_ID']
