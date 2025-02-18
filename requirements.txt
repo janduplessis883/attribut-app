@@ -14,3 +14,4 @@ black
 streamlit
 notion-client
 supabase
+tqdm
