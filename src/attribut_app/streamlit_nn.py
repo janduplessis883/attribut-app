@@ -1,10 +1,9 @@
 from nn import NotionCalendar, Scheduler
 import streamlit as st
 import time
-import os
 
 
-st.title(":material/today: Notion Scheduler")
+st.image('images/logo.png')
 
 API_KEY = st.secrets['API_KEY']
 DATABASE_ID = st.secrets['DATABASE_ID']
@@ -12,7 +11,7 @@ DATABASE_ID = st.secrets['DATABASE_ID']
 notion_calendar = NotionCalendar(API_KEY, DATABASE_ID)
 scheduler = Scheduler(notion_calendar)
 
-if st.toggle("Schedule Calendar", value=False):
+if st.checkbox("Scheduler On", value=False):
     # This container will hold our countdown progress bar and text.
     progress_container = st.empty()
     countdown_text = st.empty()
@@ -20,8 +19,8 @@ if st.toggle("Schedule Calendar", value=False):
     while True:
         with st.spinner("Scheduling Notion Calendar..."):
             scheduler.schedule_tasks()
-        st.success(":material/priority: Successful!")
-        st.info(":material/snooze: Sleeping for 15 min")
+        st.write(":material/priority: Successful! / :material/snooze: Sleeping for 15 min")
+
 
         # Set countdown for 15 minutes (900 seconds)
         total_seconds = 15 * 60

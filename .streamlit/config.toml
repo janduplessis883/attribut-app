@@ -4,7 +4,7 @@
 base = "light"
 
 # Primary color for your app, specified as a hex or named CSS color
-primaryColor = "#475569"
+primaryColor = "#000000"
 
 # Background color for your app
 backgroundColor = "#FFFFFF"
@@ -13,7 +13,7 @@ backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#f8fafc"
 
 # Text color for your app
-textColor = "#475569"
+textColor = "#000000"
 
 # Font for your app, choose between "sans serif", "serif", and "monospace"
 font = "sans serif"
