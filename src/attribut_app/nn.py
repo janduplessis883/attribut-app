@@ -15,7 +15,7 @@ NN_COLOR = Fore.LIGHTBLACK_EX      # For all NN events (predictions, training lo
 SCHEDULE_COLOR = Fore.LIGHTYELLOW_EX # For scheduling events (approximating orange)
 SUCCESS_COLOR = Fore.LIGHTGREEN_EX   # For tasks updated successfully
 ERROR_COLOR = Fore.LIGHTRED_EX       # For errors or warnings
-
+LOCK_COLOR = Fore.LIGHTBLUE_EX
 # ---------------------------
 # For the Neural Network
 # ---------------------------
@@ -304,7 +304,7 @@ class Scheduler:
         for task in tasks:
             # Skip tasks that are fixed; they already have their timeslots reserved.
             if task.fixed_schedule:
-                print(SCHEDULE_COLOR + f"🔒 Task '{task.title}' is marked as fixed schedule. Skipping rescheduling." + Style.RESET_ALL)
+                print(LOCK_COLOR + f"🔒 Task '{task.title}' is marked as fixed schedule. Skipping rescheduling." + Style.RESET_ALL)
                 continue
 
             # Prepare features for the NN:
@@ -373,7 +373,7 @@ class Scheduler:
                     continue
                 # If the candidate task would overlap a fixed interval, shift start time to after that fixed interval.
                 if candidate_end > fixed_start:
-                    print(SCHEDULE_COLOR + f"🔒 Candidate end time {candidate_end} overlaps fixed interval starting at {fixed_start}. Shifting start time to {fixed_end}." + Style.RESET_ALL)
+                    print(LOCK_COLOR + f"🔒 Candidate end time {candidate_end} overlaps fixed interval starting at {fixed_start}. Shifting start time to {fixed_end}." + Style.RESET_ALL)
                     current_time = fixed_end
                     continue
                 break
