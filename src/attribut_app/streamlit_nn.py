@@ -11,6 +11,7 @@ DATABASE_ID = st.secrets['DATABASE_ID']
 notion_calendar = NotionCalendar(API_KEY, DATABASE_ID)
 scheduler = Scheduler(notion_calendar)
 
+
 if st.toggle("Scheduler On", value=False):
     # This container will hold our countdown progress bar and text.
     progress_container = st.empty()
