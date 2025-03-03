@@ -47,8 +47,9 @@ class RescheduleNN(nn.Module):
         x = self.relu(self.fc3(x))
         # Pass through the output layer
         x = self.fc4(x)
-        # Apply ReLU again to ensure non-negative output
-        return self.relu(x)
+        # Clamp output to non-negative values instead of applying ReLU directly,
+        # providing more flexibility for training.
+        return torch.clamp(x, min=0)
 
 # ---------------------------
 # Task Model
@@ -65,6 +66,7 @@ class Task:
         self.id = id
         self.title = title
         self.duration = duration  # in minutes
+        self.original_duration = duration  # preserve the original duration for scheduling updates
         # Convert string representations to datetime objects if necessary
         self.deadline = self._to_datetime(deadline)
         self.scheduled_time = self._to_datetime(scheduled_time)
@@ -82,15 +84,20 @@ class Task:
             # Parse and then remove timezone info to keep it naive
             return datetime.datetime.fromisoformat(dt).replace(tzinfo=None)
         return dt.replace(tzinfo=None)
-
-    def update_schedule(self, new_start, extra_time=0):
+    def update_schedule(self, new_start, predicted_extra):
         """Update the scheduled start time and recalculate the end time.
-           The extra_time (in minutes) is added to the task duration to account for underestimated durations.
+           The predicted_extra (in minutes) is used to adjust the task duration.
+           New duration = original_duration * (scaled_predicted_extra / 5) if predicted_extra > 0,
+           where scaled_predicted_extra is at least 2 minutes.
         """
+        if predicted_extra > 0:
+            scaled_predicted = max(predicted_extra, 2)  # Ensure a minimum increase of 2 minutes
+            new_duration = self.original_duration * (scaled_predicted / 5)
+        else:
+            new_duration = self.original_duration
+        self.duration = new_duration
         self.scheduled_time = new_start
-        effective_duration = self.duration + extra_time
-        self.end_time = self.scheduled_time + datetime.timedelta(minutes=effective_duration)
-        # Increment the reschedule count so that our NN sees history
+        self.end_time = self.scheduled_time + datetime.timedelta(minutes=new_duration)
         self.reschedule_count += 1
 
     def to_notion_format(self):
@@ -237,6 +244,25 @@ class Scheduler:
         self.optimizer = optim.Adam(self.nn_model.parameters(), lr=0.01)
         self.criterion = nn.MSELoss()
 
+    def suggest_completion_buffer(self, task_title: str) -> float:
+        """Use OpenAI's 40-mini model to suggest a time buffer in minutes for realistic completion of a task titled: '{task_title}'."""
+        try:
+            import openai
+            print(f"[DEBUG] Calling OpenAI API for task '{task_title}' to suggest a time buffer...")
+            response = openai.Completion.create(
+                model="openai-40-mini",
+                prompt=f"Suggest a time buffer in minutes for realistic completion of a task titled: '{task_title}'",
+                max_tokens=3,
+                temperature=0.7,
+                n=1
+            )  # type: ignore[attr-defined]
+            buffer_time = float(response.choices[0].text.strip())
+            print(f"[DEBUG] Received buffer time: {buffer_time} minutes for task '{task_title}'")
+            return buffer_time
+        except Exception as e:
+            print("LLM suggestion error:", e)
+            return 0.0
+
     def _get_next_working_time(self, dt):
         """
         Adjust dt to the next available working time:
@@ -336,15 +362,15 @@ class Scheduler:
             # --- Handling tasks based on their status ---
             if task.status.lower() == "in progress":
                 new_start_time = current_time
-                old_remaining = max(0, (task.end_time - current_time).total_seconds() / 60)
-                effective_remaining = old_remaining + predicted_extra_time
-                new_end_time = new_start_time + datetime.timedelta(minutes=effective_remaining)
+                new_duration = task.duration * (predicted_extra_time / 5)
+                new_end_time = new_start_time + datetime.timedelta(minutes=new_duration)
                 print(SCHEDULE_COLOR + f"⏰ Updating in-progress task '{task.title}':" + Style.RESET_ALL)
-                print(SCHEDULE_COLOR + f"    • Old end time: {task.end_time}" + Style.RESET_ALL)
+                print(SCHEDULE_COLOR + f"    • New duration: {new_duration:.2f} min" + Style.RESET_ALL)
                 print(SCHEDULE_COLOR + f"    • New start time: {new_start_time}" + Style.RESET_ALL)
-                print(SCHEDULE_COLOR + f"    • Extended end time: {new_end_time}" + Style.RESET_ALL)
+                print(SCHEDULE_COLOR + f"    • New end time: {new_end_time}" + Style.RESET_ALL)
                 task.scheduled_time = new_start_time
                 task.end_time = new_end_time
+                task.duration = new_duration
                 task.reschedule_count += 1
                 if task.end_time > task.deadline:
                     print(ERROR_COLOR + f"⛔️ Warning: In-progress task '{task.title}' now ends at {task.end_time} which is after its deadline {task.deadline}." + Style.RESET_ALL)
@@ -379,7 +405,7 @@ class Scheduler:
                 break
 
             # Update task schedule with the (possibly adjusted) current_time.
-            task.update_schedule(current_time, extra_time=predicted_extra_time)
+            task.update_schedule(current_time, predicted_extra=predicted_extra_time)
             print(SCHEDULE_COLOR + f"⏰ Scheduling '{task.title}' at {task.scheduled_time} until {task.end_time}" + Style.RESET_ALL)
             current_time = task.end_time
             current_time = self._get_next_working_time(current_time)

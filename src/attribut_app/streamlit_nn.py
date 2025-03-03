@@ -3,7 +3,7 @@ import streamlit as st
 import time
 
 
-st.image('images/logo.png')
+st.write(":material/robot_2: **Notion Calendar Scheduler** by janduplessis883")
 
 API_KEY = st.secrets['API_KEY']
 DATABASE_ID = st.secrets['DATABASE_ID']
@@ -15,10 +15,11 @@ if st.toggle("Scheduler On", value=False):
     # This container will hold our countdown progress bar and text.
     progress_container = st.empty()
     countdown_text = st.empty()
-
+    count = 1
     while True:
-        with st.spinner("Scheduling Notion Calendar..."):
+        with st.spinner(f"Scheduling Notion Calendar with AI - Task {count}..."):
             scheduler.schedule_tasks()
+            count = count + 1
         st.write(":material/priority: Successful! / :material/snooze: Sleeping for 15 min")
 
 
