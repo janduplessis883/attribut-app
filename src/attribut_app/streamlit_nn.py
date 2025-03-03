@@ -3,7 +3,7 @@ import streamlit as st
 import time
 
 
-st.write(":material/robot_2: **Notion Calendar Scheduler** by janduplessis883")
+st.subheader(":material/robot_2: Notion Calendar Scheduler")
 
 API_KEY = st.secrets['API_KEY']
 DATABASE_ID = st.secrets['DATABASE_ID']
@@ -18,7 +18,7 @@ if st.toggle("Scheduler On", value=False):
     countdown_text = st.empty()
     count = 1
     while True:
-        with st.spinner(f"Scheduling Notion Calendar with AI - Task {count}..."):
+        with st.spinner(f"Scheduling Notion Calendar with AI..."):
             scheduler.schedule_tasks()
             count = count + 1
         st.write(":material/priority: Successful! / :material/snooze: Sleeping for 15 min")
